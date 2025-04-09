@@ -24,7 +24,7 @@
 
     body {
       font-family: 'Segoe UI', system-ui, sans-serif;
-      width: 280px;
+      width: 320px;
       padding: 20px;
       background: black;
       color: #2d3436;
@@ -44,9 +44,10 @@
     }
 
     .container {
-        display: flex;
-        align-items: center;
-        justify-content: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
       background: white;
       padding: 1.5rem;
       border-radius: 12px;
@@ -96,7 +97,7 @@
       transform: translateY(0);
     }
 
-    #status {
+    #status, #account-status, #sites-status, #reset-status, #update-status, #verification-status {
       margin: 1rem 0 0;
       padding: 0.5rem;
       border-radius: 6px;
@@ -110,6 +111,12 @@
       background: #d4edda;
       color: #155724;
       border: 1px solid #c3e6cb;
+    }
+
+    .error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
     }
 
     #password-already-set {
@@ -133,28 +140,226 @@
       font-size: 1.8rem;
       animation: bounce 1.5s ease infinite;
     }
+
+    .tabs {
+      display: flex;
+      margin-bottom: 15px;
+      border-bottom: 1px solid #e0e0e0;
+    }
+
+    .tab {
+      padding: 10px 15px;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.3s ease;
+      color: #555;
+    }
+
+    .tab.active {
+      border-bottom: 2px solid #0984e3;
+      color: #0984e3;
+      font-weight: 600;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    .site-list {
+      max-height: 150px;
+      overflow-y: auto;
+      margin: 10px 0;
+      padding: 5px;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+    }
+
+    .site-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    .site-item:last-child {
+      border-bottom: none;
+    }
+
+    .remove-site {
+      background: #f8d7da;
+      color: #721c24;
+      border: none;
+      border-radius: 4px;
+      padding: 4px 8px;
+      cursor: pointer;
+      font-size: 12px;
+      margin: 0;
+    }
+
+    .link {
+      color: #0984e3;
+      text-decoration: underline;
+      cursor: pointer;
+      font-size: 14px;
+      margin-top: 10px;
+      display: inline-block;
+    }
+
+    .back-button {
+      background: transparent;
+      color: #0984e3;
+      border: 1px solid #0984e3;
+      margin-bottom: 10px;
+    }
+    
+    .verification-info {
+      font-size: 0.9rem;
+      color: #555;
+      margin-bottom: 15px;
+      text-align: center;
+    }
+    
+    .step-indicator {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 15px;
+    }
+    
+    .step {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #e0e0e0;
+      margin: 0 5px;
+    }
+    
+    .step.active {
+      background: #0984e3;
+    }
   </style>
 </head>
 <body>
   <div class="container">
-    <div id="password-not-set" style="text-align: center;">
-      <h3>Set Password</h3>
-      <input type="password" id="new-password" placeholder="Enter new password" />
-      <button id="set-password">
-        <span class="button-text">Save Password</span>
-      </button>
-      <p id="status"></p>
+    <!-- Setup Wizard -->
+    <div id="setup-wizard" style="display: none;">
+      <div class="step-indicator">
+        <div class="step active" data-step="1"></div>
+        <div class="step" data-step="2"></div>
+        <div class="step" data-step="3"></div>
+      </div>
+      
+      <!-- Step 1: Account Creation -->
+      <div id="wizard-step-1" class="wizard-step active">
+        <h3>Create Account</h3>
+        <p class="verification-info">Set up your AstraLock account to protect your websites</p>
+        <input type="email" id="wizard-email" placeholder="Enter your email" />
+        <input type="password" id="wizard-password" placeholder="Create a password" />
+        <button id="wizard-next-1">Continue</button>
+        <p id="wizard-status-1"></p>
+      </div>
+      
+      <!-- Step 2: Add Websites -->
+      <div id="wizard-step-2" class="wizard-step" style="display: none;">
+        <h3>Add Websites</h3>
+        <p class="verification-info">Add websites you want to protect with AstraLock</p>
+        <input type="url" id="wizard-site-url" placeholder="Enter website URL (e.g., https://example.com)" />
+        <button id="wizard-add-site">Add Website</button>
+        <div class="site-list" id="wizard-site-list">
+          <!-- Sites will be added here dynamically -->
+        </div>
+        <button id="wizard-next-2">Continue</button>
+        <p id="wizard-status-2"></p>
+      </div>
+      
+      <!-- Step 3: Completion -->
+      <div id="wizard-step-3" class="wizard-step" style="display: none;">
+        <svg viewBox="0 0 24 24" style="width: 48px; height: 48px; margin-bottom: 1rem; fill: #2ecc71;">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+        </svg>
+        <h3>Setup Complete!</h3>
+        <p class="verification-info">Your AstraLock account is ready to use</p>
+        <button id="wizard-finish">Finish Setup</button>
+      </div>
+    </div>
+  
+    <!-- Main View -->
+    <div id="main-view">
+      <div class="tabs">
+        <div class="tab active" data-tab="account">Account</div>
+        <div class="tab" data-tab="sites">Protected Sites</div>
+      </div>
+
+      <!-- Account Tab -->
+      <div id="account-tab" class="tab-content active">
+        <div id="password-not-set">
+          <h3>Create Account</h3>
+          <input type="email" id="email" placeholder="Enter your email" />
+          <input type="password" id="new-password" placeholder="Create a password" />
+          <button id="create-account">
+            <span class="button-text">Create Account</span>
+          </button>
+          <p id="account-status"></p>
+        </div>
+
+        <div id="password-already-set" style="display: none;">
+          <svg viewBox="0 0 24 24">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+          </svg>
+          <h3>Account Secured</h3>
+          <p>Your account is securely set up.</p>
+          <button id="logout-button">Logout</button>
+          <p class="link" id="forgot-password-link">Forgot Password?</p>
+        </div>
+      </div>
+
+      <!-- Protected Sites Tab -->
+      <div id="sites-tab" class="tab-content">
+        <h3>Protected Websites</h3>
+        <input type="url" id="site-url" placeholder="Enter website URL (e.g., https://example.com)" />
+        <button id="add-site">Add Website</button>
+        <div class="site-list" id="site-list">
+          <!-- Sites will be added here dynamically -->
+        </div>
+        <p id="sites-status"></p>
+      </div>
     </div>
 
-    <div id="password-already-set" style="display: none;">
-      <svg viewBox="0 0 24 24">
-        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-      </svg>
-      <h3>Password Secured</h3>
-      <p>Your password is securely stored.</p>
+    <!-- Forgot Password View -->
+    <div id="forgot-password-view" style="display: none;">
+      <button class="back-button" id="back-to-main">← Back</button>
+      <h3>Reset Password</h3>
+      <p class="verification-info">Enter your email to receive a verification code</p>
+      <input type="email" id="reset-email" placeholder="Your email address" />
+      <button id="send-reset-link">Send Verification Code</button>
+      <p id="reset-status"></p>
+    </div>
+
+    <!-- Verification Code View -->
+    <div id="verification-view" style="display: none;">
+      <button class="back-button" id="back-to-forgot">← Back</button>
+      <h3>Verify Email</h3>
+      <p class="verification-info">Enter the verification code sent to your email</p>
+      <input type="text" id="verification-code" placeholder="Enter 6-digit code" maxlength="6" />
+      <button id="verify-code">Verify Code</button>
+      <p id="verification-status"></p>
+    </div>
+
+    <!-- Reset Password View -->
+    <div id="reset-password-view" style="display: none;">
+      <h3>Create New Password</h3>
+      <p class="verification-info">Enter your new password below</p>
+      <input type="password" id="reset-new-password" placeholder="New password" />
+      <input type="password" id="reset-confirm-password" placeholder="Confirm new password" />
+      <button id="update-password">Update Password</button>
+      <p id="update-status"></p>
     </div>
   </div>
 
-  <script src="auth.js"></script>
+  <script src="popup.js"></script>
 </body>
 </html>
