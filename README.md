@@ -144,7 +144,9 @@ AstraLock respects your privacy:
 Have feedback, issues, or feature requests?
 
 - 📸 Instagram: [@_shauryasingh__](https://www.instagram.com/_shauryasingh__/)  
+- 💼 LinkedIn: [Shaurya Singh](https://www.linkedin.com/in/shaurya-singh007)  
 - 📧 Email: [imparas07singh@gmail.com](mailto:imparas07singh@gmail.com)
+
 
 ---
 
