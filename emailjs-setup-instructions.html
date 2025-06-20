@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>EmailJS Setup Instructions for AstraLock</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      line-height: 1.6;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      color: #333;
+    }
+    h1 {
+      color: #0984e3;
+      border-bottom: 2px solid #0984e3;
+      padding-bottom: 10px;
+    }
+    h2 {
+      color: #0984e3;
+      margin-top: 30px;
+    }
+    code {
+      background-color: #f5f5f5;
+      padding: 2px 5px;
+      border-radius: 3px;
+      font-family: monospace;
+    }
+    pre {
+      background-color: #f5f5f5;
+      padding: 15px;
+      border-radius: 5px;
+      overflow-x: auto;
+    }
+    .step {
+      margin-bottom: 30px;
+      padding-left: 20px;
+      border-left: 3px solid #0984e3;
+    }
+    .note {
+      background-color: #e3f2fd;
+      padding: 10px;
+      border-radius: 5px;
+      margin: 15px 0;
+    }
+    img {
+      max-width: 100%;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      margin: 15px 0;
+    }
+  </style>
+</head>
+<body>
+  <h1>EmailJS Setup Instructions for AstraLock</h1>
+  
+  <p>This guide will help you set up EmailJS to enable real email verification for your AstraLock extension.</p>
+  
+  <div class="note">
+    <strong>Note:</strong> The current implementation includes a demo mode that shows the verification code directly in the UI. This is for development purposes only and should be replaced with real email sending in production.
+  </div>
+  
+  <h2>Step 1: Create an EmailJS Account</h2>
+  <div class="step">
+    <p>Visit <a href="https://www.emailjs.com/" target="_blank">https://www.emailjs.com/</a> and sign up for a free account.</p>
+    <p>The free tier allows 200 emails per month, which should be sufficient for testing and personal use.</p>
+  </div>
+  
+  <h2>Step 2: Add an Email Service</h2>
+  <div class="step">
+    <p>After signing in:</p>
+    <ol>
+      <li>Go to "Email Services" in the dashboard</li>
+      <li>Click "Add New Service"</li>
+      <li>Choose your preferred email provider (Gmail, Outlook, etc.)</li>
+      <li>Follow the instructions to connect your email account</li>
+      <li>Give your service a name (e.g., "AstraLock")</li>
+    </ol>
+    <p>Once created, note down the <strong>Service ID</strong> (e.g., "service_abc123").</p>
+  </div>
+  
+  <h2>Step 3: Create an Email Template</h2>
+  <div class="step">
+    <p>Next, create a template for your verification emails:</p>
+    <ol>
+      <li>Go to "Email Templates" in the dashboard</li>
+      <li>Click "Create New Template"</li>
+      <li>Design your email template with the following variables:
+        <ul>
+          <li><code>{{to_name}}</code> - The recipient's name</li>
+          <li><code>{{verification_code}}</code> - The verification code</li>
+        </ul>
+      </li>
+      <li>Save your template</li>
+    </ol>
+    <p>Here's a simple template example:</p>
+    <pre>Subject: Your AstraLock Verification Code
+
+Hello {{to_name}},
+
+Your verification code for AstraLock is: {{verification_code}}
+
+This code will expire in 15 minutes.
+
+If you did not request this code, please ignore this email.
+
+Best regards,
+AstraLock Team</pre>
+    <p>Once created, note down the <strong>Template ID</strong> (e.g., "template_xyz789").</p>
+  </div>
+  
+  <h2>Step 4: Get Your Public Key</h2>
+  <div class="step">
+    <p>To authenticate with EmailJS:</p>
+    <ol>
+      <li>Go to "Account" in the dashboard</li>
+      <li>Find your <strong>Public Key</strong> under "API Keys"</li>
+    </ol>
+    <p>Note down this key (e.g., "user_abcdefg123456").</p>
+  </div>
+  
+  <h2>Step 5: Update Your Code</h2>
+  <div class="step">
+    <p>Now, update your AstraLock code with the values you've collected:</p>
+    <ol>
+      <li>Open <code>popup.js</code> and <code>content.js</code></li>
+      <li>Find the commented EmailJS sections</li>
+      <li>Uncomment the EmailJS code</li>
+      <li>Replace the placeholder values:
+        <ul>
+          <li><code>YOUR_EMAILJS_PUBLIC_KEY</code> with your Public Key</li>
+          <li><code>YOUR_SERVICE_ID</code> with your Service ID</li>
+          <li><code>YOUR_TEMPLATE_ID</code> with your Template ID</li>
+        </ul>
+      </li>
+      <li>Comment out or remove the demo code that displays the verification code in the UI</li>
+    </ol>
+  </div>
+  
+  <h2>Testing Your Implementation</h2>
+  <div class="step">
+    <p>After updating your code:</p>
+    <ol>
+      <li>Load your extension in Chrome</li>
+      <li>Try the "Forgot Password" flow</li>
+      <li>Check your email for the verification code</li>
+    </ol>
+    <p>If everything is set up correctly, you should receive an email with your verification code.</p>
+  </div>
+  
+  <div class="note">
+    <strong>Troubleshooting:</strong> If you're not receiving emails, check the browser console for errors. Make sure your EmailJS service is connected properly and that you've entered all IDs correctly.
+  </div>
+</body>
+</html>

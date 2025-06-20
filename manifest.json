@@ -3,15 +3,25 @@
   "name": "AstraLock",
   "version": "1.0",
   "description": "Protect websites with password and email authentication",
-  "permissions": ["storage", "scripting", "activeTab", "tabs"],
-  "host_permissions": ["<all_urls>"],
+  "permissions": [
+    "storage",
+    "scripting",
+    "activeTab",
+    "tabs"
+  ],
+  "host_permissions": [
+    "<all_urls>",
+    "https://api.emailjs.com/*"
+  ],
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "background.js",
+    "type": "module"
   },
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["content.js"]
+      "js": ["sha256.min.js", "content.js"],
+      "run_at": "document_end"
     }
   ],
   "action": {
@@ -26,5 +36,14 @@
     "16": "icon.png",
     "48": "icon.png",
     "128": "icon.png"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["sha256.min.js", "email.min.js", "security.png", "logo.png"],
+      "matches": ["<all_urls>"]
+    }
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
   }
 }

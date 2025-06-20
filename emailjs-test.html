@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>EmailJS Test - AstraLock</title>
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 2rem;
+      }
+      input,
+      button {
+        padding: 0.5rem;
+        margin: 0.5rem 0;
+      }
+      #result {
+        margin-top: 1rem;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>EmailJS Test for AstraLock</h2>
+    <label for="email">Your Email:</label><br />
+    <input
+      type="email"
+      id="email"
+      placeholder="you@example.com"
+      required
+    /><br />
+    <button id="send-btn">Send Test OTP Email</button>
+    <div id="result"></div>
+    <script>
+      // Initialize EmailJS
+      emailjs.init("lKQMX4p-cSyYhv0-7"); // Your public key
+
+      document.getElementById("send-btn").onclick = function () {
+        const email = document.getElementById("email").value;
+        const resultDiv = document.getElementById("result");
+        if (!email) {
+          resultDiv.textContent = "Please enter your email.";
+          resultDiv.style.color = "red";
+          return;
+        }
+        // Generate a random 6-digit code
+        const code = Math.floor(100000 + Math.random() * 900000).toString();
+        // Prepare template params
+        const templateParams = {
+          to_email: email,
+          verification_code: code,
+          to_name: email.split("@")[0],
+        };
+        resultDiv.textContent = "Sending...";
+        resultDiv.style.color = "black";
+        emailjs
+          .send("service_h9a8bgc", "template_zuuk2t1", templateParams)
+          .then(
+            function (response) {
+              resultDiv.textContent =
+                "Email sent! Check your inbox (and spam folder).";
+              resultDiv.style.color = "green";
+            },
+            function (error) {
+              resultDiv.textContent =
+                "Failed to send email: " +
+                (error.text || error.message || error);
+              resultDiv.style.color = "red";
+              console.error("EmailJS error:", error);
+            }
+          );
+      };
+    </script>
+  </body>
+</html>

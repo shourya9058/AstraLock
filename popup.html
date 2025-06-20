@@ -1,292 +1,812 @@
 <!DOCTYPE html>
 <html>
-<head>
-  <title>AstraLock Settings</title>
-  <style>
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(-10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
+  <head>
+    <meta charset="UTF-8" />
+    <title>AstraLock Settings</title>
+    <link rel="stylesheet" href="styles.css" />
+    <style>
+      body {
+        width: 360px;
+        padding: 20px;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          "Helvetica Neue", Arial, sans-serif;
+        margin: 0;
+        background: #f8fafc;
+      }
 
-    @keyframes slideIn {
-      from { opacity: 0; transform: translateX(20px); }
-      to { opacity: 1; transform: translateX(0); }
-    }
+      h3 {
+        color: #1a365d;
+        margin: 0 0 16px 0;
+        font-size: 1.5rem;
+        font-weight: 600;
+        text-align: center;
+      }
 
-    @keyframes bounce {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-5px); }
-    }
+      input {
+        width: 100%;
+        padding: 12px;
+        margin: 8px 0;
+        border: 2px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 14px;
+        transition: all 0.2s ease;
+        box-sizing: border-box;
+      }
 
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
+      input:focus {
+        outline: none;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+      }
 
-    body {
-      font-family: 'Segoe UI', system-ui, sans-serif;
-      width: 320px;
-      padding: 20px;
-      background: black;
-      color: #2d3436;
-      animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    }
+      button {
+        width: 100%;
+        padding: 12px;
+        margin: 12px 0;
+        border: none;
+        border-radius: 8px;
+        background: linear-gradient(to right, #3b82f6, #2563eb);
+        color: white;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+      }
 
-    h3 {
-      margin: 0 0 1.5rem 0;
-      font-size: 1.4rem;
-      background: linear-gradient(45deg, #2d3436, #0984e3);
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
+      button:hover {
+        background: linear-gradient(to right, #2563eb, #1d4ed8);
+        box-shadow: 0 4px 6px rgba(59, 130, 246, 0.3);
+        transform: translateY(-1px);
+      }
 
-    .container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      background: white;
-      padding: 1.5rem;
-      border-radius: 12px;
-      box-shadow: 0 8px 30px rgba(0,0,0,0.12);
-      margin-bottom: 1rem;
-    }
+      button:active {
+        transform: translateY(0);
+      }
 
-    input {
-      width: 100%;
-      padding: 12px;
-      margin: 8px 0;
-      border: 2px solid #e0e0e0;
-      border-radius: 8px;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      font-size: 14px;
-    }
+      button.loading {
+        background: #93c5fd;
+        cursor: not-allowed;
+      }
 
-    input:focus {
-      outline: none;
-      border-color: #74b9ff;
-      box-shadow: 0 0 0 3px rgba(116, 185, 255, 0.2);
-    }
+      button.loading .button-text {
+        visibility: hidden;
+      }
 
-    button {
-      width: 100%;
-      padding: 12px;
-      margin: 1rem 0 0;
-      background: linear-gradient(45deg, #0984e3, #74b9ff);
-      color: white;
-      border: none;
-      border-radius: 8px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.5rem;
-    }
+      button.loading::after {
+        content: "";
+        position: absolute;
+        width: 20px;
+        height: 20px;
+        border: 3px solid transparent;
+        border-top-color: white;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
 
-    button:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 5px 15px rgba(9, 132, 227, 0.3);
-    }
+      .success,
+      .error {
+        position: absolute;
+        top: 80px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 9999;
+        color: #15803d;
+        background: linear-gradient(to right, #dcfce7, #bbf7d0);
+        padding: 12px 16px;
+        border-radius: 8px;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        animation: slideInDown 0.3s ease;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        min-width: 280px;
+        max-width: 90%;
+        border: 1px solid rgba(21, 128, 61, 0.1);
+      }
 
-    button:active {
-      transform: translateY(0);
-    }
+      /* Add position relative to the container */
+      #main-view,
+      #setup-wizard,
+      #forgot-password-view,
+      #verification-view,
+      #reset-password-view {
+        position: relative;
+      }
 
-    #status, #account-status, #sites-status, #reset-status, #update-status, #verification-status {
-      margin: 1rem 0 0;
-      padding: 0.5rem;
-      border-radius: 6px;
-      font-size: 0.9rem;
-      text-align: center;
-      transition: all 0.3s ease;
-      animation: slideIn 0.3s ease-out;
-    }
+      .error {
+        color: #4338ca;
+        background: linear-gradient(to right, #e0e7ff, #c7d2fe);
+        border-color: rgba(67, 56, 202, 0.1);
+      }
 
-    .success {
-      background: #d4edda;
-      color: #155724;
-      border: 1px solid #c3e6cb;
-    }
+      @keyframes slideInDown {
+        from {
+          opacity: 0;
+          transform: translate(-50%, -20px);
+        }
+        to {
+          opacity: 1;
+          transform: translate(-50%, 0);
+        }
+      }
 
-    .error {
-      background: #f8d7da;
-      color: #721c24;
-      border: 1px solid #f5c6cb;
-    }
+      @keyframes slideOutUp {
+        from {
+          opacity: 1;
+          transform: translate(-50%, 0);
+        }
+        to {
+          opacity: 0;
+          transform: translate(-50%, -20px);
+        }
+      }
 
-    #password-already-set {
-      text-align: center;
-      animation: bounce 1s ease infinite;
-    }
+      .success.hide,
+      .error.hide {
+        animation: slideOutUp 0.3s ease forwards;
+      }
 
-    #password-already-set svg {
-      width: 48px;
-      height: 48px;
-      margin-bottom: 1rem;
-      fill: #2ecc71;
-      animation: bounce 1.5s ease infinite;
-    }
+      .tabs {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 20px;
+        background: #e2e8f0;
+        padding: 4px;
+        border-radius: 8px;
+      }
 
-    .loading {
-      animation: spin 1s linear infinite;
-    }
+      .tab {
+        flex: 1;
+        padding: 8px 16px;
+        text-align: center;
+        cursor: pointer;
+        border-radius: 6px;
+        font-weight: 500;
+        color: #64748b;
+        transition: all 0.2s ease;
+      }
 
-    .lock-icon {
-      font-size: 1.8rem;
-      animation: bounce 1.5s ease infinite;
-    }
+      .tab:hover {
+        color: #1e293b;
+      }
 
-    .tabs {
-      display: flex;
-      margin-bottom: 15px;
-      border-bottom: 1px solid #e0e0e0;
-    }
+      .tab.active {
+        background: white;
+        color: #1a365d;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      }
 
-    .tab {
-      padding: 10px 15px;
-      cursor: pointer;
-      border-bottom: 2px solid transparent;
-      transition: all 0.3s ease;
-      color: #555;
-    }
+      .tab-content {
+        display: none;
+      }
 
-    .tab.active {
-      border-bottom: 2px solid #0984e3;
-      color: #0984e3;
-      font-weight: 600;
-    }
+      .tab-content.active {
+        display: block;
+        animation: fadeIn 0.3s ease;
+      }
 
-    .tab-content {
-      display: none;
-    }
+      .verification-info {
+        color: #222;
+        font-size: 15px;
+        font-weight: 400;
+        margin-bottom: 20px;
+        opacity: 0.85;
+        line-height: 1.6;
+      }
 
-    .tab-content.active {
-      display: block;
-    }
+      .verification-info .highlight {
+        color: #0055ff;
+        font-weight: 500;
+        position: relative;
+        display: inline-block;
+        margin-bottom: 4px;
+      }
 
-    .site-list {
-      max-height: 150px;
-      overflow-y: auto;
-      margin: 10px 0;
-      padding: 5px;
-      border: 1px solid #e0e0e0;
-      border-radius: 8px;
-    }
+      .verification-info .highlight::after {
+        content: "";
+        position: absolute;
+        bottom: -2px;
+        left: 0;
+        width: 100%;
+        height: 2px;
+        background: linear-gradient(to right, #0055ff, transparent);
+        opacity: 0.3;
+      }
 
-    .site-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 8px;
-      border-bottom: 1px solid #f0f0f0;
-    }
+      .site-list {
+        margin-top: 16px;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        overflow-y: auto;
+        max-height: 220px;
+        padding: 8px 0;
+        border: 1px solid #e5e7eb;
+      }
 
-    .site-item:last-child {
-      border-bottom: none;
-    }
+      .site-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 20px;
+        margin: 8px 16px;
+        background: #f8fafc;
+        border-radius: 10px;
+        box-shadow: 0 1px 4px rgba(59, 130, 246, 0.07);
+        border: 1px solid #e5e7eb;
+        transition: box-shadow 0.2s, background 0.2s;
+      }
 
-    .remove-site {
-      background: #f8d7da;
-      color: #721c24;
-      border: none;
-      border-radius: 4px;
-      padding: 4px 8px;
-      cursor: pointer;
-      font-size: 12px;
-      margin: 0;
-    }
+      .site-item:hover {
+        background: #e0f2fe;
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.12);
+      }
 
-    .link {
-      color: #0984e3;
-      text-decoration: underline;
-      cursor: pointer;
-      font-size: 14px;
-      margin-top: 10px;
-      display: inline-block;
-    }
+      .site-item span {
+        font-size: 14px;
+        color: #1e293b;
+        word-break: break-all;
+      }
 
-    .back-button {
-      background: transparent;
-      color: #0984e3;
-      border: 1px solid #0984e3;
-      margin-bottom: 10px;
-    }
-    
-    .verification-info {
-      font-size: 0.9rem;
-      color: #555;
-      margin-bottom: 15px;
-      text-align: center;
-    }
-    
-    .step-indicator {
-      display: flex;
-      justify-content: center;
-      margin-bottom: 15px;
-    }
-    
-    .step {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      background: #e0e0e0;
-      margin: 0 5px;
-    }
-    
-    .step.active {
-      background: #0984e3;
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
+      .remove-site {
+        background: linear-gradient(to right, #3b82f6, #2563eb);
+        color: white;
+        padding: 8px 12px;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: 500;
+        margin: 0;
+        flex-shrink: 0;
+        width: auto;
+      }
+
+      .remove-site:hover {
+        background: linear-gradient(to right, #2563eb, #1d4ed8);
+      }
+
+      .back-button {
+        background: transparent;
+        color: #64748b;
+        width: auto;
+        padding: 9px 8px;
+        margin-bottom: 16px;
+        font-size: 14px;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s ease;
+      }
+
+      .back-button:hover {
+        background: #f8fafc;
+        color: #1e293b;
+        border-color: #cbd5e1;
+      }
+
+      .back-button:active {
+        transform: translateY(1px);
+      }
+
+      #password-already-set {
+        text-align: center;
+        padding: 24px;
+        background: linear-gradient(to bottom right, #f0f9ff, #e0f2fe);
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(59, 130, 246, 0.1);
+      }
+
+      #password-already-set svg {
+        width: 64px;
+        height: 64px;
+        margin-bottom: 16px;
+        fill: #22c55e;
+        background: #dcfce7;
+        padding: 16px;
+        border-radius: 50%;
+        box-shadow: 0 4px 6px rgba(34, 197, 94, 0.2);
+        animation: pulse 2s infinite;
+      }
+
+      @keyframes pulse {
+        0% {
+          transform: scale(1);
+          box-shadow: 0 4px 6px rgba(34, 197, 94, 0.2);
+        }
+        50% {
+          transform: scale(1.05);
+          box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+        }
+        100% {
+          transform: scale(1);
+          box-shadow: 0 4px 6px rgba(34, 197, 94, 0.2);
+        }
+      }
+
+      #password-already-set h3 {
+        color: #15803d;
+        margin-bottom: 8px;
+        font-size: 1.75rem;
+      }
+
+      #password-already-set p {
+        color: #64748b;
+        margin: 0 0 24px 0;
+        font-size: 1rem;
+        line-height: 1.5;
+      }
+
+      #logout-button {
+        background: linear-gradient(to right, #6366f1, #4f46e5);
+        box-shadow: 0 2px 4px rgba(99, 102, 241, 0.2);
+        margin-bottom: 12px;
+      }
+
+      #logout-button:hover {
+        background: linear-gradient(to right, #4f46e5, #4338ca);
+        box-shadow: 0 4px 6px rgba(99, 102, 241, 0.3);
+      }
+
+      .link {
+        color: #3b82f6;
+        text-decoration: underline;
+        cursor: pointer;
+        margin: 0;
+        font-size: 14px;
+      }
+
+      .link:hover {
+        color: #2563eb;
+      }
+
+      .steps {
+        display: flex;
+        justify-content: center;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+
+      .step {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #e2e8f0;
+        transition: all 0.2s ease;
+      }
+
+      .step.active {
+        background: #3b82f6;
+        transform: scale(1.2);
+      }
+
+      /* Read-only input styles */
+      input[readonly] {
+        background-color: #f3f4f6 !important;
+        cursor: not-allowed;
+        border-color: #e5e7eb;
+        padding-right: 35px !important;
+      }
+
+      .info-icon {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #64748b;
+        cursor: help;
+      }
+
+      .info-icon:hover {
+        color: #3b82f6;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(4px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes slideIn {
+        from {
+          opacity: 0;
+          transform: translateX(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(0);
+        }
+      }
+
+      /* Password Modal Styles */
+      #password-modal,
+      #otp-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(4px);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+      }
+
+      .modal-content {
+        background: white;
+        padding: 24px;
+        border-radius: 12px;
+        width: 90%;
+        max-width: 320px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        animation: slideUp 0.3s ease;
+      }
+
+      @keyframes slideUp {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .modal-title {
+        color: #1a365d;
+        margin: 0 0 16px 0;
+        font-size: 1.25rem;
+        font-weight: 600;
+      }
+
+      .modal-buttons {
+        display: flex;
+        gap: 8px;
+        margin-top: 20px;
+      }
+
+      .modal-buttons button {
+        flex: 1;
+        margin: 0;
+      }
+
+      #password-modal-cancel,
+      #otp-cancel-btn {
+        background: #e2e8f0;
+        color: #64748b;
+      }
+
+      #password-modal-cancel:hover,
+      #otp-cancel-btn:hover {
+        background: #cbd5e1;
+        color: #1e293b;
+      }
+
+      /* Protected Sites Tab Styles */
+      #sites-tab {
+        padding: 16px;
+        background: linear-gradient(to bottom right, #f0f9ff, #e0f2fe);
+        border-radius: 12px;
+        box-shadow: 0 2px 4px rgba(59, 130, 246, 0.1);
+      }
+
+      #sites-tab h3 {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 20px;
+      }
+
+      .site-input-group {
+        position: relative;
+        margin-bottom: 8px;
+      }
+
+      #site-url {
+        padding-right: 120px;
+      }
+
+      #add-site {
+        position: absolute;
+        right: 4px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: auto;
+        padding: 8px 16px;
+        margin: 0;
+        font-size: 13px;
+        border-radius: 6px;
+      }
+
+      .empty-sites {
+        text-align: center;
+        padding: 32px 16px;
+        color: #64748b;
+        font-size: 14px;
+        background: #f8fafc;
+        border-radius: 12px;
+        margin-top: 20px;
+      }
+
+      .empty-sites svg {
+        width: 48px;
+        height: 48px;
+        margin-bottom: 12px;
+        fill: #94a3b8;
+      }
+
+      .sites-container {
+        padding: 16px;
+        background: linear-gradient(to bottom right, #f0f9ff, #e0f2fe);
+        border-radius: 12px;
+        box-shadow: 0 2px 4px rgba(59, 130, 246, 0.1);
+      }
+
+      .site-input-group {
+        position: relative;
+        margin: 16px 0;
+      }
+
+      .site-input-group input {
+        padding-right: 100px;
+      }
+
+      .site-input-group button {
+        position: absolute;
+        right: 4px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: auto;
+        padding: 8px 16px;
+        margin: 0;
+      }
+
+      .empty-sites {
+        text-align: center;
+        padding: 32px 16px;
+        color: #64748b;
+        background: #f8fafc;
+        border-radius: 12px;
+        margin-top: 16px;
+      }
+
+      .empty-sites svg {
+        width: 48px;
+        height: 48px;
+        margin-bottom: 12px;
+        fill: #94a3b8;
+      }
+
+      .empty-sites p {
+        margin: 0;
+        line-height: 1.5;
+      }
+
+      @keyframes slideIn {
+        from {
+          opacity: 0;
+          transform: translateX(-20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(0);
+        }
+      }
+
+      @keyframes fadeOut {
+        from {
+          opacity: 1;
+          transform: translateX(0);
+        }
+        to {
+          opacity: 0;
+          transform: translateX(20px);
+        }
+      }
+
+      #sites-tab h3 {
+        margin-bottom: 8px;
+      }
+
+      #sites-tab .verification-info {
+        margin-bottom: 16px;
+      }
+
+      #sites-status {
+        margin-top: 16px;
+        margin-bottom: 10px;
+      }
+
+      /* Title */
+      .app-title {
+        text-align: center;
+        font-size: 24px;
+        font-weight: 700;
+        color: #1e293b;
+        margin: 0 0 20px;
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        padding: 8px 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+      }
+
+      .app-logo {
+        width: 32px;
+        height: 32px;
+        object-fit: contain;
+      }
+
+      [data-theme="dark"] .app-title {
+        color: #f8fafc;
+      }
+
+      /* Watermark */
+      .watermark {
+        position: relative;
+        width: fit-content;
+        margin: 24px auto 12px;
+        font-size: 13px;
+        font-weight: 500;
+        color: #4285f4;
+        background: rgba(239, 246, 255, 0.95);
+        padding: 4px 16px 4px 12px;
+        border-radius: 100px;
+        box-shadow: 0 2px 8px rgba(66, 133, 244, 0.15);
+        backdrop-filter: blur(8px);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        border: 1px solid rgba(66, 133, 244, 0.2);
+        transition: all 0.3s ease;
+        text-decoration: none;
+        height: 42px;
+        box-sizing: border-box;
+      }
+
+      .watermark:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(66, 133, 244, 0.2);
+        background: rgba(239, 246, 255, 1);
+      }
+
+      .watermark img {
+        width: 42px;
+        height: 36px;
+        object-fit: contain;
+        margin: -2px 0;
+        transition: all 0.3s ease;
+      }
+
+      .watermark:hover img {
+        transform: scale(1.05);
+      }
+
+      [data-theme="dark"] .watermark {
+        background: rgba(30, 58, 138, 0.3);
+        border-color: rgba(66, 133, 244, 0.3);
+        color: #4285f4;
+      }
+
+      [data-theme="dark"] .watermark:hover {
+        background: rgba(30, 58, 138, 0.4);
+      }
+
+      /* Dark theme adjustments */
+      [data-theme="dark"] .verification-info {
+        color: #e2e8f0;
+      }
+
+      [data-theme="dark"] .verification-info .highlight {
+        color: #60a5fa;
+      }
+
+      [data-theme="dark"] .verification-info .highlight::after {
+        background: linear-gradient(to right, #60a5fa, transparent);
+      }
+      /* Watermark inside password modal */
+      #password-modal .modal-watermark {
+        position: absolute;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 8px 22px 8px 18px !important;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- App Title -->
+    <h1 class="app-title">
+      AstraLock
+      <img src="security.png" alt="Security Logo" class="app-logo" />
+    </h1>
+
     <!-- Setup Wizard -->
-    <div id="setup-wizard" style="display: none;">
-      <div class="step-indicator">
-        <div class="step active" data-step="1"></div>
+    <div id="setup-wizard" style="display: none">
+      <div class="steps">
+        <div class="step" data-step="1"></div>
         <div class="step" data-step="2"></div>
         <div class="step" data-step="3"></div>
       </div>
-      
-      <!-- Step 1: Account Creation -->
-      <div id="wizard-step-1" class="wizard-step active">
-        <h3>Create Account</h3>
-        <p class="verification-info">Set up your AstraLock account to protect your websites</p>
+
+      <!-- Step 1: Email -->
+      <div id="wizard-step-1">
+        <h3>Welcome to AstraLock! 🚀</h3>
+        <p class="verification-info">
+          Let's get you set up with a secure account
+        </p>
         <input type="email" id="wizard-email" placeholder="Enter your email" />
-        <input type="password" id="wizard-password" placeholder="Create a password" />
-        <button id="wizard-next-1">Continue</button>
+        <button id="wizard-next-1">
+          <span class="button-text">Continue with Email</span>
+        </button>
         <p id="wizard-status-1"></p>
       </div>
-      
-      <!-- Step 2: Add Websites -->
-      <div id="wizard-step-2" class="wizard-step" style="display: none;">
-        <h3>Add Websites</h3>
-        <p class="verification-info">Add websites you want to protect with AstraLock</p>
-        <input type="url" id="wizard-site-url" placeholder="Enter website URL (e.g., https://example.com)" />
-        <button id="wizard-add-site">Add Website</button>
-        <div class="site-list" id="wizard-site-list">
-          <!-- Sites will be added here dynamically -->
-        </div>
-        <button id="wizard-next-2">Continue</button>
-        <p id="wizard-status-2"></p>
+
+      <!-- Password Step -->
+      <div id="wizard-password-step" style="display: none">
+        <h3>Create Your Password 🔒</h3>
+        <p class="verification-info">
+          <span class="highlight">Choose a strong password</span><br />
+          This will be your key to protected sites
+        </p>
+        <input
+          type="password"
+          id="wizard-password"
+          placeholder="Enter your password"
+          style="position: relative"
+        />
+        <button id="wizard-set-password">
+          <span class="button-text">Set Password</span>
+        </button>
+        <p id="wizard-password-status"></p>
       </div>
-      
-      <!-- Step 3: Completion -->
-      <div id="wizard-step-3" class="wizard-step" style="display: none;">
-        <svg viewBox="0 0 24 24" style="width: 48px; height: 48px; margin-bottom: 1rem; fill: #2ecc71;">
-          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-        </svg>
-        <h3>Setup Complete!</h3>
-        <p class="verification-info">Your AstraLock account is ready to use</p>
-        <button id="wizard-finish">Finish Setup</button>
+
+      <!-- Step 2: Add Sites -->
+      <div id="wizard-step-2" style="display: none">
+        <h3>Protect Your Sites 🛡️</h3>
+        <p class="verification-info">
+          <span class="highlight">Select websites to secure</span><br />
+          Add the sites you want to protect with AstraLock
+        </p>
+        <input
+          type="url"
+          id="wizard-site-url"
+          placeholder="Enter website URL (e.g., https://example.com)"
+        />
+        <button id="wizard-add-site">
+          <span class="button-text">Add Website</span>
+        </button>
+        <div class="site-list" id="wizard-site-list"></div>
+        <p id="wizard-status-2"></p>
+        <button id="wizard-next-2" style="margin-top: 20px">
+          <span class="button-text">Complete Setup</span>
+        </button>
       </div>
     </div>
-  
+
     <!-- Main View -->
     <div id="main-view">
       <div class="tabs">
@@ -297,69 +817,216 @@
       <!-- Account Tab -->
       <div id="account-tab" class="tab-content active">
         <div id="password-not-set">
-          <h3>Create Account</h3>
+          <h3>Create Account 🌟</h3>
+          <p class="verification-info">
+            <span class="highlight">Join AstraLock</span><br />
+            Protect your favorite sites with secure access
+          </p>
           <input type="email" id="email" placeholder="Enter your email" />
-          <input type="password" id="new-password" placeholder="Create a password" />
           <button id="create-account">
-            <span class="button-text">Create Account</span>
+            <span class="button-text">Continue with Email</span>
           </button>
           <p id="account-status"></p>
         </div>
 
-        <div id="password-already-set" style="display: none;">
+        <div id="password-already-set" style="display: none">
           <svg viewBox="0 0 24 24">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+            <path
+              d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"
+            />
           </svg>
-          <h3>Account Secured</h3>
-          <p>Your account is securely set up.</p>
-          <button id="logout-button">Logout</button>
+          <h3>Account Secured! 🎉</h3>
+          <p>Your digital fortress is ready to protect your sites</p>
+          <button id="logout-button">
+            <span class="button-text">Logout</span>
+          </button>
           <p class="link" id="forgot-password-link">Forgot Password?</p>
         </div>
       </div>
 
       <!-- Protected Sites Tab -->
       <div id="sites-tab" class="tab-content">
-        <h3>Protected Websites</h3>
-        <input type="url" id="site-url" placeholder="Enter website URL (e.g., https://example.com)" />
-        <button id="add-site">Add Website</button>
-        <div class="site-list" id="site-list">
-          <!-- Sites will be added here dynamically -->
+        <div class="sites-container">
+          <h3>Protected Websites 🔐</h3>
+          <p class="verification-info">
+            <span class="highlight">Manage your secure sites</span><br />
+            Add or remove protected websites
+          </p>
+          <div class="site-input-group">
+            <input
+              type="url"
+              id="site-url"
+              placeholder="Enter website URL (e.g., https://example.com)"
+            />
+            <button id="add-site">
+              <span class="button-text">Add Site</span>
+            </button>
+          </div>
+          <p id="sites-status"></p>
+          <div class="site-list" id="site-list">
+            <!-- Sites will be added here dynamically -->
+          </div>
+          <div class="empty-sites" style="display: none">
+            <svg viewBox="0 0 24 24">
+              <path
+                d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-4h2v2h-2zm0-2h2V7h-2z"
+              />
+            </svg>
+            <p>No protected sites yet.<br />Add your first website above!</p>
+          </div>
         </div>
-        <p id="sites-status"></p>
       </div>
     </div>
 
     <!-- Forgot Password View -->
-    <div id="forgot-password-view" style="display: none;">
+    <div id="forgot-password-view" style="display: none">
       <button class="back-button" id="back-to-main">← Back</button>
-      <h3>Reset Password</h3>
-      <p class="verification-info">Enter your email to receive a verification code</p>
-      <input type="email" id="reset-email" placeholder="Your email address" />
-      <button id="send-reset-link">Send Verification Code</button>
+      <h3>Reset Password 🔄</h3>
+      <p class="verification-info">We'll send you a verification code</p>
+      <div style="position: relative">
+        <input
+          type="email"
+          id="reset-email"
+          placeholder="Your email address"
+          readonly
+          style="background-color: #f3f4f6; cursor: not-allowed"
+        />
+        <div
+          style="
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #64748b;
+          "
+        >
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path
+              d="M12 17h.01M12 3c-1.1 0-2 .9-2 2v4c0 1.1.9 2 2 2s2-.9 2-2V5c0-1.1-.9-2-2-2zm0 13a1 1 0 100-2 1 1 0 000 2z"
+            />
+          </svg>
+        </div>
+      </div>
+      <button id="send-reset-link">
+        <span class="button-text">Send Verification Code</span>
+      </button>
       <p id="reset-status"></p>
     </div>
 
     <!-- Verification Code View -->
-    <div id="verification-view" style="display: none;">
+    <div id="verification-view" style="display: none">
       <button class="back-button" id="back-to-forgot">← Back</button>
-      <h3>Verify Email</h3>
-      <p class="verification-info">Enter the verification code sent to your email</p>
-      <input type="text" id="verification-code" placeholder="Enter 6-digit code" maxlength="6" />
-      <button id="verify-code">Verify Code</button>
+      <h3>Verify Email ✉️</h3>
+      <p class="verification-info">
+        Check your inbox for the verification code
+      </p>
+      <input
+        type="text"
+        id="verification-code"
+        placeholder="Enter 6-digit code"
+        maxlength="6"
+      />
+      <button id="verify-code">
+        <span class="button-text">Verify Code</span>
+      </button>
       <p id="verification-status"></p>
     </div>
 
     <!-- Reset Password View -->
-    <div id="reset-password-view" style="display: none;">
-      <h3>Create New Password</h3>
-      <p class="verification-info">Enter your new password below</p>
-      <input type="password" id="reset-new-password" placeholder="New password" />
-      <input type="password" id="reset-confirm-password" placeholder="Confirm new password" />
-      <button id="update-password">Update Password</button>
+    <div id="reset-password-view" style="display: none">
+      <h3>New Password 🔒</h3>
+      <p class="verification-info">Choose a strong new password</p>
+      <input
+        type="password"
+        id="reset-new-password"
+        placeholder="New password"
+        style="position: relative"
+      />
+      <input
+        type="password"
+        id="reset-confirm-password"
+        placeholder="Confirm new password"
+        style="position: relative"
+      />
+      <button id="update-password">
+        <span class="button-text">Update Password</span>
+      </button>
       <p id="update-status"></p>
     </div>
-  </div>
 
-  <script src="popup.js"></script>
-</body>
+    <!-- Password Modal -->
+    <div id="password-modal" style="display: none">
+      <div class="modal-content">
+        <h4 class="modal-title">Enter Password 🔑</h4>
+        <input
+          type="password"
+          id="password-modal-input"
+          placeholder="Enter your password"
+          style="position: relative"
+        />
+        <p id="password-modal-status"></p>
+        <div class="modal-buttons">
+          <button id="password-modal-cancel">
+            <span class="button-text">Cancel</span>
+          </button>
+          <button id="password-modal-submit">
+            <span class="button-text">Submit</span>
+          </button>
+        </div>
+      </div>
+      <a
+        href="https://www.instagram.com/_shauryasingh__/"
+        target="_blank"
+        class="watermark modal-watermark"
+      >
+        <img src="logo.png" alt="Spiderman Logo" />
+        Created by Shaurya Singh
+      </a>
+    </div>
+
+    <!-- OTP Modal -->
+    <div id="otp-modal" style="display: none">
+      <div class="modal-content">
+        <h4 class="modal-title">Verify Email ✉️</h4>
+        <p class="verification-info">Enter the code sent to your email</p>
+        <input
+          type="text"
+          id="otp-input"
+          placeholder="Enter 6-digit code"
+          maxlength="6"
+        />
+        <p id="otp-modal-status"></p>
+        <div class="modal-buttons">
+          <button id="otp-cancel-btn">
+            <span class="button-text">Cancel</span>
+          </button>
+          <button id="otp-verify-btn">
+            <span class="button-text">Verify</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Watermark -->
+    <a
+      href="https://www.instagram.com/_shauryasingh__/"
+      target="_blank"
+      class="watermark"
+    >
+      <img src="logo.png" alt="Spiderman Logo" />
+      Created by Shaurya Singh
+    </a>
+
+    <script src="email.min.js"></script>
+    <script src="emailjs-config.js"></script>
+    <script src="sha256.min.js"></script>
+    <script src="popup.js"></script>
+  </body>
 </html>

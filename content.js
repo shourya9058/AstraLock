@@ -1,5 +1,77 @@
+// Synchronous SHA-256 implementation (from https://geraintluff.github.io/sha256/)
+function sha256(ascii) {
+    function rightRotate(v, c) { return (v>>>c)|(v<<(32-c)); }
+    var mathPow=Math.pow,maxMath=Math.max;
+    var result = "", i, j, k, l, W = new Array(64), H = [1779033703,3144134277,1013904242,2773480762,1359893119,2600822924,528734635,1541459225], K = [1116352408,1899447441,3049323471,3921009573,961987163,1508970993,2453635748,2870763221,3624381080,310598401,607225278,1426881987,1925078388,2162078206,2614888103,3248222580,3835390401,4022224774,264347078,604807628,770255983,1249150122,1555081692,1996064986,2554220882,2821834349,2952996808,3210313671,3336571891,3584528711,113926993,338241895,666307205,773529912,1294757372,1396182291,1695183700,1986661051,2177026350,2456956037,2730485921,2820302411,3259730800,3345764771,3516065817,3600352804,4094571909,275423344,430227734,506948616,659060556,883997877,958139571,1322822218,1537002063,1747873779,1955562222,2024104815,2227730452,2361852424,2428436474,2756734187,3204031479,3329325298];
+    ascii += '\x80';
+    while (ascii.length%64-56) ascii += '\x00';
+    for (i=0; i<ascii.length; i++) {
+        j = ascii.charCodeAt(i);
+        if (j>>8) return;
+        result += String.fromCharCode(j);
+    }
+    var l = ascii.length-1;
+    var words = [];
+    for (i=0; i<ascii.length; i++) words[i>>2] |= ascii.charCodeAt(i) << (24-(i%4)*8);
+    words[words.length] = ((l*8)>>29)&0xFF;
+    words[words.length] = ((l*8)>>21)&0xFF;
+    words[words.length] = ((l*8)>>13)&0xFF;
+    words[words.length] = ((l*8)>>5)&0xFF;
+    words[words.length] = ((l*8)<<3)&0xFF;
+    for (j=0; j<words.length; j+=16) {
+        var oldH = H.slice(0);
+        for (i=0; i<64; i++) {
+            if (i<16) W[i] = words[j+i]|0;
+            else {
+                var gamma0 = rightRotate(W[i-15],7)^rightRotate(W[i-15],18)^(W[i-15]>>>3);
+                var gamma1 = rightRotate(W[i-2],17)^rightRotate(W[i-2],19)^(W[i-2]>>>10);
+                W[i] = (W[i-16] + gamma0 + W[i-7] + gamma1)|0;
+            }
+            var ch = (H[4]&H[5])^((~H[4])&H[6]);
+            var maj = (H[0]&H[1])^(H[0]&H[2])^(H[1]&H[2]);
+            var sigma0 = rightRotate(H[0],2)^rightRotate(H[0],13)^rightRotate(H[0],22);
+            var sigma1 = rightRotate(H[4],6)^rightRotate(H[4],11)^rightRotate(H[4],25);
+            var t1 = (H[7] + sigma1 + ch + K[i] + W[i])|0;
+            var t2 = (sigma0 + maj)|0;
+            H = [(t1+t2)|0,H[0],H[1],H[2],(H[3]+t1)|0,H[4],H[5],H[6]];
+        }
+        for (i=0; i<8; i++) H[i] = (H[i]+oldH[i])|0;
+    }
+    for (i=0; i<8; i++) for (j=3; j+1; j--) {
+        var b = (H[i]>>(j*8))&255;
+        result += ((b>>4).toString(16)) + ((b&15).toString(16));
+    }
+    return result.slice(-64);
+}
+
+// Dynamically load sha256.min.js for password hashing
+(function loadSHA256() {
+  if (typeof window.sha256 === 'undefined') {
+    var script = document.createElement('script');
+    script.src = chrome.runtime.getURL('sha256.min.js');
+    document.head.appendChild(script);
+  }
+})();
+
 // Check if current URL is in protected sites list
 function checkAndProtectSite() {
+  // Use a single sessionStorage flag for the tab and a global window flag
+  const tabAuth = sessionStorage.getItem('astralock_authenticated');
+  const globalAuth = window.astralock_authenticated;
+  const navigationEntry = performance.getEntriesByType("navigation")[0];
+  const isPageRefresh = navigationEntry?.type === "reload";
+
+  // If already authenticated for this tab (sessionStorage or global), skip protection
+  if ((tabAuth === "true" || globalAuth === true) && !isPageRefresh) {
+    return;
+  }
+
+  // Clear auth on page refresh
+  if (isPageRefresh) {
+    sessionStorage.removeItem('astralock_authenticated');
+    window.astralock_authenticated = false;
+  }
+
   chrome.storage.sync.get(["protected_sites"], (result) => {
     const sites = result.protected_sites || ["https://web.whatsapp.com/"]
     const currentUrl = window.location.href
@@ -45,647 +117,625 @@ function injectProtectionOverlay() {
     if (document.getElementById("pg-blur-layer")) {
       return
     }
-
     // Inject custom CSS styles
     const style = document.createElement("style")
     style.textContent = `
-      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-  
-      @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(-20px); }
-        to { opacity: 1; transform: translateY(0); }
-      }
-  
-      @keyframes fadeOut {
-        from { opacity: 1; transform: translateY(0); }
-        to { opacity: 0; transform: translateY(-20px); }
-      }
-  
-      @keyframes shake {
-        0%, 100% { transform: translateX(0); }
-        25% { transform: translateX(-8px); }
-        75% { transform: translateX(8px); }
-      }
-  
-      @keyframes pulse {
-        0% { transform: scale(1); box-shadow: 0 15px 35px rgba(0,0,0,0.2); }
-        50% { transform: scale(1.03); box-shadow: 0 20px 45px rgba(0,0,0,0.3); }
-        100% { transform: scale(1); box-shadow: 0 15px 35px rgba(0,0,0,0.2); }
-      }
-  
-      @keyframes spin {
-        to { transform: rotate(360deg); }
-      }
-  
-      @keyframes bounce {
-        0%, 100% { transform: translateY(0); }
-        50% { transform: translateY(-5px); }
-      }
-  
-      @keyframes floatIcons {
-        0% { transform: translateY(0) rotate(0deg) scale(1); opacity: 0.2; }
-        50% { transform: translateY(-20px) rotate(5deg) scale(1.1); opacity: 0.3; }
-        100% { transform: translateY(0) rotate(0deg) scale(1); opacity: 0.2; }
-      }
-  
-      @keyframes gradientBG {
-        0% { background-position: 0% 50%; }
-        50% { background-position: 100% 50%; }
-        100% { background-position: 0% 50%; }
-      }
-  
-      #pg-blur-layer {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(10, 15, 30, 0.85);
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
-        z-index: 999999;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        animation: fadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-        overflow: hidden;
-        transition: opacity 0.8s ease, transform 0.8s ease;
-        font-family: 'Inter', sans-serif;
-      }
-  
-      #pg-blur-layer.fade-out {
+      @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap');
+
+      /* Ensure consistent box sizing */
+      *, *::before, *::after {
+        box-sizing: border-box;
+}
+
+#pg-blur-layer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  min-width: 100vw;
+  min-height: 100vh;
+        background: rgba(235, 235, 235, 0.15);
+        backdrop-filter: blur(15px) saturate(110%);
+        -webkit-backdrop-filter: blur(15px) saturate(110%);
+        -webkit-transform: translateZ(0);
+        transform: translateZ(0);
+        z-index: 2147483647;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+        font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+  overflow: hidden;
         opacity: 0;
-        transform: translateY(-20px);
+        transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+        will-change: opacity, backdrop-filter, transform;
+        -webkit-backface-visibility: hidden;
+        backface-visibility: hidden;
         pointer-events: none;
       }
-  
-      .background-icons {
-        position: absolute;
-        top: 0;
+
+      #pg-blur-layer.visible {
+        opacity: 1;
+        pointer-events: all;
+      }
+
+      /* Ensure the blur layer stays on top and covers everything */
+      html.has-blur-overlay,
+      body.has-blur-overlay {
+        overflow: hidden !important;
+        position: fixed !important;
+        height: 100% !important;
+        width: 100% !important;
+        max-height: 100vh !important;
+        max-width: 100vw !important;
+        margin: 0 !important;
+        padding: 0 !important;
         left: 0;
-        width: 100%;
-        height: 100%;
-        z-index: 1;
-        overflow: hidden;
-        pointer-events: none;
+        top: 0;
+        right: 0;
+        bottom: 0;
       }
-  
-      .bg-icon {
-        position: absolute;
-        font-size: 70px;
-        color: rgba(255, 255, 255, 0.2);
-        animation: floatIcons 8s infinite;
-        opacity: 0.2;
-        filter: drop-shadow(0 5px 15px rgba(0,0,0,0.1));
-        will-change: transform;
+
+.unlock-modal {
+        background: rgba(187, 214, 243, 0.75);
+  border-radius: 24px;
+        padding: 32px;
+        width: 90%;
+        max-width: 380px;
+  text-align: center;
+        transform: translateY(20px) scale(0.95);
+        opacity: 0;
+        transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+        transition-delay: 0.1s;
+        box-shadow: 
+          0 4px 24px -1px rgba(0, 0, 0, 0.12),
+          0 0 1px 0 rgba(0, 0, 0, 0.05),
+          0 0 40px rgba(0, 85, 255, 0.06);
+  position: relative;
+        backdrop-filter: blur(10px) saturate(180%);
+        -webkit-backdrop-filter: blur(10px) saturate(180%);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        will-change: transform, opacity;
       }
-  
-      .unlock-modal {
+
+      #pg-blur-layer.visible .unlock-modal {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+      }
+
+      .modal-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+        gap: 12px;
+        margin-bottom: 24px;
+        color: #1A1A1A;
+        font-size: 28px;
+        font-weight: 600;
+        letter-spacing: -0.5px;
+        background: linear-gradient(135deg, #1a365d, #0055FF);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        font-family: 'Poppins', sans-serif;
+      }
+
+      .modal-logo {
+        width: 32px;
+        height: 32px;
+        object-fit: contain;
+        filter: drop-shadow(0 2px 4px rgba(0, 85, 255, 0.1));
+      }
+
+      .modal-subtitle {
+        color: #222;
+        font-size: 16px;
+        font-weight: 400;
+        margin-bottom: 28px;
+        opacity: 0.85;
+        line-height: 1.6;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        background: black;
-        padding: 2.5rem;
-        border-radius: 24px;
-        box-shadow: 0 15px 50px rgba(0,0,0,0.3);
-        text-align: center;
-        max-width: 400px;
-        width: 90%;
-        animation: pulse 2s ease infinite;
-        position: relative;
-        z-index: 2;
-        border: 1px solid rgba(255,255,255,0.1);
-        color: #ffffff;
-      }
-  
-      .unlock-modal h2 {
-        margin: 0 0 1.8rem 0;
-        font-size: 2rem;
-        font-weight: 800;
-        background: black;
-        background-size: 200% 200%;
-        animation: gradientBG 5s ease infinite;
-        -webkit-background-clip: text;
-        background-clip: text;
-        color: white;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.5rem;
-        letter-spacing: -0.5px;
-      }
-  
-      #pg-password, #pg-verification-code {
-        width: 100%;
-        max-width: 320px;
-        padding: 14px 16px;
-        border: 2px solid rgba(255, 255, 255, 0.2);
-        border-radius: 16px;
-        font-size: 1rem;
-        transition: all 0.3s ease;
-        background: rgba(255, 255, 255, 0.1);
-        box-shadow: inset 0 2px 5px rgba(0,0,0,0.05);
-        text-align: center;
-        color: #ffffff;
-        margin: 0 auto 20px auto;
-        display: block;
-        height: 48px;
-        box-sizing: border-box;
-      }
-  
-      #pg-password:focus, #pg-verification-code:focus {
-        outline: none;
-        border-color: white;
-        box-shadow: 0 0 0 4px rgba(71, 118, 230, 0.2), inset 0 2px 5px rgba(0,0,0,0.05);
-        background: rgba(255, 255, 255, 0.15);
-      }
-  
-      #pg-password::placeholder, #pg-verification-code::placeholder {
-        color: rgba(255, 255, 255, 0.5);
-      }
-  
-      #pg-submit, #pg-verify-code {
-        width: 100%;
-        max-width: 320px;
-        height: 48px;
-        padding: 14px 16px;
-        background: white;
-        background-size: 200% 200%;
-        animation: gradientBG 5s ease infinite;
-        color: black;
-        border: none;
-        border-radius: 16px;
-        font-weight: 700;
-        font-size: 1.1rem;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.8rem;
-        box-shadow: 0 10px 25px rgba(71, 118, 230, 0.3);
-        position: relative;
-        overflow: hidden;
-        transition: width 0.4s ease-in-out;
-      }
-  
-      #pg-submit:hover, #pg-verify-code:hover {
-        color: white;
-        background-color: #1B56FD;
-      }
-  
-      #pg-submit:active, #pg-verify-code:active {
-        transform: translateY(-1px);
-        box-shadow: 0 8px 15px rgba(71, 118, 230, 0.3);
-      }
-  
-      #pg-error, #pg-verification-error {
-        margin-top: 15px;
-        font-size: 0.95rem;
-        padding: 12px;
-        border-radius: 12px;
-        background-color: rgba(248, 113, 113, 0.2);
-        color: #f87171;
-        border: 1px solid rgba(248, 113, 113, 0.3);
-        opacity: 0;
-        transform: translateY(10px);
-        transition: all 0.3s ease;
-      }
-  
-      #pg-error.show, #pg-verification-error.show {
-        opacity: 1;
-        transform: translateY(0);
+        gap: 8px;
       }
 
-      #pg-forgot-password {
-        margin-top: 15px;
-        font-size: 0.9rem;
-        color: rgba(255, 255, 255, 0.7);
-        text-decoration: underline;
-        cursor: pointer;
-        transition: all 0.3s ease;
+      .modal-subtitle .highlight {
+        color: #0055FF;
+        font-weight: 500;
+        position: relative;
+        display: inline-block;
+        margin-bottom: 4px;
       }
 
-      #pg-forgot-password:hover {
-        color: white;
-      }
-  
-      .loading-spinner {
-        width: 22px;
-        height: 22px;
-        border: 3px solid rgba(255,255,255,0.3);
-        border-radius: 50%;
-        border-top-color: #fff;
-        animation: spin 0.8s ease-in-out infinite;
-        display: none;
-      }
-  
-      .branding {
+      .modal-subtitle .highlight::after {
+        content: '';
         position: absolute;
-        bottom: 20px;
+        bottom: -2px;
         left: 0;
         width: 100%;
-        text-align: center;
-        font-size: 0.85rem;
-        color: rgba(255,255,255,0.5);
+        height: 2px;
+        background: linear-gradient(to right, #0055FF, transparent);
+        opacity: 0.3;
       }
-  
-      .branding a {
-        color: rgba(255,255,255,0.7);
-        text-decoration: none;
-        transition: all 0.3s ease;
+
+      .password-field-wrapper {
+        position: relative;
+        width: 100%;
+        margin-bottom: 20px;
+}
+
+      #pg-password,
+      #pg-reset-otp,
+      #pg-reset-newpass {
+  width: 100%;
+        height: 52px;
+        padding: 0 44px 0 20px;
+        background: rgba(255, 255, 255, 0.9);
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        border-radius: 14px;
+        font-size: 16px;
+        color: #000;
+        transition: all 0.2s ease;
+        box-shadow: 
+          0 2px 6px rgba(0, 0, 0, 0.05),
+          0 0 0 4px rgba(0, 85, 255, 0);
+        font-family: inherit;
+}
+
+      #pg-password:focus,
+      #pg-reset-otp:focus,
+      #pg-reset-newpass:focus {
+  outline: none;
+        background: #fff;
+        box-shadow: 
+          0 4px 12px rgba(0, 0, 0, 0.1),
+          0 0 0 4px rgba(0, 85, 255, 0.1);
+        border-color: rgba(0, 85, 255, 0.2);
+}
+
+      #pg-password::placeholder,
+      #pg-reset-otp::placeholder,
+      #pg-reset-newpass::placeholder {
+        color: rgba(0, 0, 0, 0.4);
+}
+
+      #pg-error,
+      #pg-reset-error {
+        color: #ef4444;
+        font-size: 14px;
+        margin-top: 12px;
+        opacity: 0;
+        transition: opacity 0.2s ease;
       }
-  
-      .branding a:hover {
-        color: #fff;
+
+      #pg-error.show,
+      #pg-reset-error.show {
+        opacity: 1;
+      }
+
+      .forgot-password-btn {
+        background: none;
+        border: none;
+        color: #0055FF;
+        font-size: 14px;
+        padding: 8px 16px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        margin-top: 12px;
+        opacity: 0.8;
+      }
+
+      .forgot-password-btn:hover {
+        opacity: 1;
         text-decoration: underline;
       }
 
-      /* Reset Password Form */
-      #pg-reset-form, #pg-verification-form {
-        display: none;
-      }
-
-      #pg-reset-email {
+      #pg-submit,
+      #pg-reset-confirm {
         width: 100%;
-        max-width: 320px;
-        padding: 14px 16px;
-        border: 2px solid rgba(255, 255, 255, 0.2);
-        border-radius: 16px;
-        font-size: 1rem;
-        transition: all 0.3s ease;
-        background: rgba(255, 255, 255, 0.1);
-        box-shadow: inset 0 2px 5px rgba(0,0,0,0.05);
-        text-align: center;
-        color: #ffffff;
-        margin: 0 auto 20px auto;
-        display: block;
-        height: 48px;
-        box-sizing: border-box;
+        height: 52px;
+        background: linear-gradient(135deg, #0055FF, #0044CC);
+        border: none;
+        border-radius: 14px;
+        color: #fff;
+        font-size: 16px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 
+          0 4px 12px rgba(0, 85, 255, 0.2),
+          0 0 0 4px rgba(0, 85, 255, 0);
+        font-family: inherit;
       }
 
-      #pg-reset-email:focus {
-        outline: none;
-        border-color: white;
-        box-shadow: 0 0 0 4px rgba(71, 118, 230, 0.2), inset 0 2px 5px rgba(0,0,0,0.05);
-        background: rgba(255, 255, 255, 0.15);
+      #pg-submit:hover,
+      #pg-reset-confirm:hover {
+        transform: translateY(-1px);
+        box-shadow: 
+          0 6px 16px rgba(0, 85, 255, 0.25),
+          0 0 0 4px rgba(0, 85, 255, 0.1);
       }
 
-      #pg-back-button {
-        background: transparent;
-        border: 1px solid white;
-        color: white;
-        margin-bottom: 15px;
+      #pg-submit:active,
+      #pg-reset-confirm:active {
+        transform: translateY(0);
+        box-shadow: 
+          0 2px 8px rgba(0, 85, 255, 0.15),
+          0 0 0 4px rgba(0, 85, 255, 0.1);
       }
 
-      #pg-back-button:hover {
-        background: rgba(255, 255, 255, 0.1);
+      #pg-submit.loading,
+      #pg-reset-confirm.loading {
+        background: #93c5fd;
+        cursor: not-allowed;
+        transform: none;
       }
-      
-      .verification-info {
-        font-size: 0.9rem;
-        color: rgba(255, 255, 255, 0.7);
-        margin-bottom: 15px;
-        max-width: 320px;
-        text-align: center;
+
+      #pg-submit.loading span,
+      #pg-reset-confirm.loading span {
+        opacity: 0;
+      }
+
+      #pg-submit.loading .loading-spinner,
+      #pg-reset-confirm.loading .loading-spinner {
+        opacity: 1;
+      }
+
+      .loading-spinner {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        width: 20px;
+        height: 20px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-top: 2px solid #fff;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+        opacity: 0;
+        transition: opacity 0.15s;
+        z-index: 2;
+        pointer-events: none;
+      }
+
+      @keyframes spin {
+        to {
+          transform: translate(-50%, -50%) rotate(360deg);
+        }
       }
     `
-    document.head.appendChild(style)
+    
+    document.head.appendChild(style);
+    // ----- Add watermark styles (same as popup.html) -----
+    const watermarkStyle = document.createElement("style");
+    watermarkStyle.textContent = `
+      /* Watermark */
+      .watermark {
+        position: fixed;
+        left: 50%;
+        bottom: 30px;
+        transform: translate(-50%, 0);
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+        white-space: nowrap;
+        font-size: 13px;
+        font-weight: 500;
+        color: #4285f4;
+        background: rgba(239, 246, 255, 0.95);
+        padding: 4px 16px 4px 12px;
+        border-radius: 100px;
+        box-shadow: 0 4px 20px rgba(66, 133, 244, 0.25), 0 0 15px rgba(66, 133, 244, 0.15);
+        backdrop-filter: blur(8px);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        border: 1px solid rgba(66, 133, 244, 0.2);
+        transition: all 0.3s ease;
+        text-decoration: none;
+        height: 42px;
+        box-sizing: border-box;
+        animation: float 4s ease-in-out infinite;
+      }
+      
+      @keyframes float {
+        0%, 100% {
+          transform: translate(-50%, 0) scale(1);
+          box-shadow: 0 4px 20px rgba(66, 133, 244, 0.25), 0 0 15px rgba(66, 133, 244, 0.15);
+        }
+        50% {
+          transform: translate(-50%, -5px) scale(1.01);
+          box-shadow: 0 8px 25px rgba(66, 133, 244, 0.3), 0 0 20px rgba(66, 133, 244, 0.2);
+        }
+      }
 
-    // Create background icons with more variety
-    const securityIcons = ["💀", "🔒", "🛡️", "⚠️", "🔐", "🔑"]
-    let bgIconsHTML = ""
+      .watermark:hover {
+        transform: translateY(-1px) scale(1.03);
+        box-shadow: 0 4px 12px rgba(66, 133, 244, 0.2);
+        background: rgba(239, 246, 255, 1);
+        text-decoration: none;
+      }
 
-    for (let i = 0; i < 20; i++) {
-      const randomIcon = securityIcons[Math.floor(Math.random() * securityIcons.length)]
-      const randomTop = Math.random() * 100
-      const randomLeft = Math.random() * 100
-      const randomDelay = Math.random() * 8
-      const randomDuration = 6 + Math.random() * 8
-      const randomSize = 50 + Math.random() * 40
+      .watermark img {
+        width: 42px;
+        height: 36px;
+        object-fit: contain;
+        margin: -2px 0;
+        transition: all 0.3s ease;
+      }
 
-      // Ensure each icon has a unique animation duration and delay for more natural movement
-      bgIconsHTML += `<div class="bg-icon" style="top: ${randomTop}%; left: ${randomLeft}%; animation-delay: ${randomDelay}s; animation-duration: ${randomDuration}s; font-size: ${randomSize}px;">${randomIcon}</div>`
-    }
+      .watermark:hover img {
+        transform: scale(1.05);
+      }
+      /* Position at bottom center of blur layer */
+      #pg-blur-layer .watermark {
+        position: absolute;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+      }
+      [data-theme="dark"] .watermark {
+        background: rgba(30, 58, 138, 0.3);
+        border-color: rgba(66, 133, 244, 0.3);
+        color: #4285f4;
+      }
+      [data-theme="dark"] .watermark:hover {
+        background: rgba(30, 58, 138, 0.4);
+      }
+    `;
+    document.head.appendChild(watermarkStyle)
 
     // Create blur layer with enhanced content
     const blurDiv = document.createElement("div")
     blurDiv.id = "pg-blur-layer"
     blurDiv.innerHTML = `
-      <div class="background-icons">
-        ${bgIconsHTML}
-      </div>
-      <div class="unlock-modal">
-        <!-- Login Form -->
-        <div id="pg-login-form">
-          <h2>AstraLock</h2>
-          <input type="password" id="pg-password" placeholder="Enter your password" autocomplete="current-password" />
-          <button id="pg-submit">
-            <span>Unlock</span>
-            <span class="loading-spinner"></span>
-          </button>
-          <div id="pg-error"></div>
-          <div id="pg-forgot-password">Forgot Password?</div>
+      <div class="unlock-modal" id="pg-main-modal">
+        <div class="modal-title">
+          AstraLock
+          <img src="${chrome.runtime.getURL('security.png')}" alt="Security Logo" class="modal-logo" />
         </div>
-
-        <!-- Reset Password Form -->
-        <div id="pg-reset-form">
-          <h2>Reset Password</h2>
-          <p class="verification-info">Enter your email to receive a verification code</p>
-          <input type="email" id="pg-reset-email" placeholder="Enter your email" />
-          <button id="pg-back-button">Back</button>
-          <button id="pg-send-reset">
-            <span>Send Verification Code</span>
-            <span class="loading-spinner"></span>
-          </button>
-          <div id="pg-reset-error"></div>
+        <div class="modal-subtitle">
+          <div><span class="highlight">This page is protected</span></div>
+          <div style="white-space: nowrap;">Please enter your access code to continue</div>
         </div>
-        
-        <!-- Verification Code Form -->
-        <div id="pg-verification-form">
-          <h2>Verify Email</h2>
-          <p class="verification-info">Enter the verification code sent to your email</p>
-          <input type="text" id="pg-verification-code" placeholder="Enter verification code" />
-          <button id="pg-back-to-reset" class="pg-back-button">Back</button>
-          <button id="pg-verify-code">
-            <span>Verify Code</span>
-            <span class="loading-spinner"></span>
-          </button>
-          <div id="pg-verification-error"></div>
+        <div class="password-field-wrapper">
+          <input 
+            type="password" 
+            id="pg-password" 
+            placeholder="Password" 
+            autocomplete="current-password" 
+            spellcheck="false"
+          />
         </div>
+        <button id="pg-submit">
+          <span>Unlock</span>
+          <div class="loading-spinner"></div>
+        </button>
+        <button class="forgot-password-btn" id="pg-forgot-password">Forgot password?</button>
+        <div id="pg-error"></div>
       </div>
-      <div class="branding">
-        Created by <a href="https://www.linkedin.com/in/shaurya-singh007" target="_blank">@Shourya Singh</a>
+      <div class="unlock-modal" id="pg-reset-modal" style="display:none;">
+        <div class="modal-title">Reset Password</div>
+        <div class="modal-subtitle" id="pg-reset-info">An OTP has been sent to your email.</div>
+        <div class="password-field-wrapper">
+          <input type="text" id="pg-reset-otp" placeholder="Enter OTP" maxlength="6" autocomplete="one-time-code" />
+        </div>
+        <div class="password-field-wrapper">
+          <input type="password" id="pg-reset-newpass" placeholder="New password" autocomplete="new-password" />
       </div>
+        <button id="pg-reset-confirm">
+          <span>Reset Password</span>
+          <div class="loading-spinner"></div>
+        </button>
+        <button class="forgot-password-btn" id="pg-reset-back" style="margin-top:18px;">Back to Login</button>
+        <div id="pg-reset-error"></div>
+      </div>
+      <a href="https://www.instagram.com/_shauryasingh__/" target="_blank" class="watermark">
+        <img src="${chrome.runtime.getURL('logo.png')}" alt="Spiderman Logo" />
+        Created by Shaurya Singh
+      </a>
     `
 
-    document.body.appendChild(blurDiv)
+    document.body.classList.add('has-blur-overlay');
+    document.body.appendChild(blurDiv);
+    
+    // Force a reflow before adding the visible class
+    blurDiv.offsetHeight;
+    
+    // Add visible class to trigger the transition
+    requestAnimationFrame(() => {
+      blurDiv.classList.add('visible');
+    });
 
-    // Get DOM elements
-    const passwordInput = document.getElementById("pg-password")
-    const submitBtn = document.getElementById("pg-submit")
-    const errorMessage = document.getElementById("pg-error")
-    const spinner = submitBtn.querySelector(".loading-spinner")
-    const blurLayer = document.getElementById("pg-blur-layer")
-    const forgotPasswordLink = document.getElementById("pg-forgot-password")
-    const loginForm = document.getElementById("pg-login-form")
-    const resetForm = document.getElementById("pg-reset-form")
-    const verificationForm = document.getElementById("pg-verification-form")
-    const resetEmailInput = document.getElementById("pg-reset-email")
-    const sendResetBtn = document.getElementById("pg-send-reset")
-    const backButton = document.getElementById("pg-back-button")
-    const backToResetButton = document.getElementById("pg-back-to-reset")
-    const resetErrorMessage = document.getElementById("pg-reset-error")
-    const verificationCodeInput = document.getElementById("pg-verification-code")
-    const verifyCodeBtn = document.getElementById("pg-verify-code")
-    const verificationErrorMessage = document.getElementById("pg-verification-error")
+    // Get DOM elements after appending blurDiv
+    const passwordInput = blurDiv.querySelector("#pg-password");
+    const submitBtn = blurDiv.querySelector("#pg-submit");
+    const errorMessage = blurDiv.querySelector("#pg-error");
+    const togglePassword = blurDiv.querySelector('#pg-toggle-password');
 
-    // Focus the password input
-    setTimeout(() => {
-      passwordInput.focus()
-    }, 100)
+      // Authentication logic
+      submitBtn.addEventListener("click", () => {
+        const enteredPassword = passwordInput.value;
+        errorMessage.classList.remove("show");
+        errorMessage.textContent = "";
 
-    // Enter key submits the form
-    passwordInput.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") {
-        submitBtn.click()
-      }
-    })
+        if (!enteredPassword) {
+          errorMessage.textContent = "Please enter your password";
+          errorMessage.classList.add("show");
+          return;
+        }
 
-    verificationCodeInput.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") {
-        verifyCodeBtn.click()
-      }
-    })
+        submitBtn.classList.add('loading');
+        submitBtn.disabled = true;
 
-    // Ensure background icons are animated
-    function animateBackgroundIcons() {
-      const icons = document.querySelectorAll(".bg-icon")
-      icons.forEach((icon) => {
-        // Apply a small random movement to each icon to ensure animation is visible
-        icon.style.animationPlayState = "running"
-        icon.style.willChange = "transform"
-      })
-    }
+        // Wait for sha256 function to be available
+        const checkSHA256 = () => {
+          // Use the built-in sha256 function we defined at the top of the file
+          const enteredPasswordHash = sha256(enteredPassword);
+          
+          chrome.storage.sync.get(["pg_password", "pg_email"], (result) => {
+            const realPasswordHash = result.pg_password;
+            const userEmail = result.pg_email;
 
-    // Call the animation function after a short delay
-    setTimeout(animateBackgroundIcons, 500)
+            // If no email or password exists, start fresh flow
+            if (!userEmail || !realPasswordHash) {
+              errorMessage.textContent = "Please set up your account first";
+              errorMessage.classList.add("show");
+              submitBtn.classList.remove('loading');
+              submitBtn.disabled = false;
+              return;
+            }
 
-    // Authentication logic
-    submitBtn.addEventListener("click", () => {
-      const enteredPassword = passwordInput.value
+          setTimeout(() => {
+            if (enteredPasswordHash === realPasswordHash) {
+              // Set session flag so overlay doesn't reappear for this tab
+              sessionStorage.setItem('astralock_authenticated', 'true');
+              window.astralock_authenticated = true;
+              removeBlurLayer();
+            } else {
+                errorMessage.textContent = "Incorrect password";
+              errorMessage.classList.add("show");
+              passwordInput.value = "";
+              passwordInput.focus();
+                submitBtn.classList.remove('loading');
+              submitBtn.disabled = false;
+            }
+          }, 1000);
+        });
+        };
 
-      // Hide any visible error messages
-      errorMessage.classList.remove("show")
+        // Since we have the sha256 function defined at the top of the file,
+        // we can call it immediately
+        checkSHA256();
+      });
 
-      if (!enteredPassword) {
-        errorMessage.textContent = "Please enter a password"
-        errorMessage.classList.add("show")
-        document.querySelector(".unlock-modal").classList.add("shake")
-        setTimeout(() => {
-          document.querySelector(".unlock-modal").classList.remove("shake")
-        }, 500)
-        return
-      }
+    // Forgot password modal logic
+    const forgotBtn = blurDiv.querySelector('#pg-forgot-password');
+    const mainModal = blurDiv.querySelector('#pg-main-modal');
+    const resetModal = blurDiv.querySelector('#pg-reset-modal');
+    const resetBackBtn = blurDiv.querySelector('#pg-reset-back');
+    const resetConfirmBtn = blurDiv.querySelector('#pg-reset-confirm');
+    const resetError = blurDiv.querySelector('#pg-reset-error');
+    const resetInfo = blurDiv.querySelector('#pg-reset-info');
+    let generatedOtp = null;
+    let userEmail = '';
 
-      // Show loading state
-      submitBtn.disabled = true
-      spinner.style.display = "inline-block"
-      submitBtn.querySelector("span").textContent = "Authenticating..."
-
-      // Get password from storage
-      chrome.storage.sync.get(["pg_password"], (result) => {
-        const realPassword = result.pg_password
-
-        // Simulate network delay for authentication
-        setTimeout(() => {
-          if (enteredPassword === realPassword) {
-            // Success path
-            document.querySelector(".unlock-modal").style.boxShadow = "0 0 40px rgba(0, 176, 155, 0.5)"
-
-            // Smooth fade out transition instead of abrupt removal
-            blurLayer.classList.add("fade-out")
-
-            // Only remove from DOM after transition completes
-            setTimeout(() => {
-              blurLayer.remove()
-            }, 800) // Match this to the transition duration
+    forgotBtn.addEventListener('click', () => {
+      // Get the logged-in user's email
+      chrome.storage.sync.get(["pg_email"], (result) => {
+        userEmail = result.pg_email;
+        if (!userEmail) {
+          resetError.textContent = 'Please set up your account first';
+          return;
+        }
+        mainModal.style.display = 'none';
+        resetModal.style.display = 'block';
+        resetError.textContent = '';
+        resetInfo.textContent = 'Sending OTP...';
+        
+        // Generate OTP
+        generatedOtp = (Math.floor(100000 + Math.random() * 900000)).toString();
+        
+        // Request background script to send the OTP email
+        chrome.runtime.sendMessage({
+          action: 'send_otp_email',
+          toEmail: userEmail,
+          otp: generatedOtp
+        }, (response) => {
+          if (response && response.success) {
+            resetInfo.textContent = `An OTP has been sent to your email (${userEmail.replace(/(.{2}).+(@.*)/, '$1***$2')})`;
           } else {
-            // Failure path
-            errorMessage.textContent = "Incorrect password. Please try again."
-            errorMessage.classList.add("show")
-            document.querySelector(".unlock-modal").classList.add("shake")
+            resetInfo.textContent = 'Failed to send OTP email. Please try again.';
+            resetError.textContent = response?.error || 'Network error. Please check your connection.';
+            console.error('OTP send error:', response?.error);
+            // Show the back button to let user try again
+            resetBackBtn.style.display = 'block';
+              }
+        });
+      });
+    });
 
-            setTimeout(() => {
-              document.querySelector(".unlock-modal").classList.remove("shake")
-            }, 500)
+    resetBackBtn.addEventListener('click', () => {
+      mainModal.style.display = 'block';
+      resetModal.style.display = 'none';
+      resetError.textContent = '';
+    });
 
-            passwordInput.value = ""
-            passwordInput.focus()
+    resetConfirmBtn.addEventListener('click', () => {
+      const otpInput = blurDiv.querySelector('#pg-reset-otp').value.trim();
+      const newPass = blurDiv.querySelector('#pg-reset-newpass').value;
+      resetError.textContent = '';
 
-            // Reset button state
-            submitBtn.disabled = false
-            spinner.style.display = "none"
-            submitBtn.querySelector("span").textContent = "Unlock"
-          }
-        }, 1000)
-      })
-    })
-
-    // Forgot password link
-    forgotPasswordLink.addEventListener("click", () => {
-      loginForm.style.display = "none"
-      resetForm.style.display = "block"
-
-      // Pre-fill email if available
-      chrome.storage.sync.get(["pg_email"], (result) => {
-        if (result.pg_email) {
-          resetEmailInput.value = result.pg_email
-        }
-      })
-    })
-
-    // Back button
-    backButton.addEventListener("click", () => {
-      resetForm.style.display = "none"
-      loginForm.style.display = "block"
-    })
-
-    // Back to reset button
-    backToResetButton.addEventListener("click", () => {
-      verificationForm.style.display = "none"
-      resetForm.style.display = "block"
-    })
-
-    // Send reset link with verification code
-    sendResetBtn.addEventListener("click", () => {
-      const email = resetEmailInput.value
-
-      // Basic validation
-      if (!email || !validateEmail(email)) {
-        resetErrorMessage.textContent = "Please enter a valid email address"
-        resetErrorMessage.classList.add("show")
-        return
+      if (!otpInput) {
+        resetError.textContent = 'Please enter OTP.';
+        return;
       }
 
-      // Check if email exists
-      chrome.storage.sync.get(["pg_email"], (result) => {
-        if (result.pg_email !== email) {
-          resetErrorMessage.textContent = "Email not found. Please enter the email you used to register."
-          resetErrorMessage.classList.add("show")
-          return
-        }
+      if (otpInput !== generatedOtp) {
+        resetError.textContent = 'Invalid OTP.';
+        return;
+          }
 
-        // Show loading state
-        sendResetBtn.disabled = true
-        sendResetBtn.querySelector(".loading-spinner").style.display = "inline-block"
-        sendResetBtn.querySelector("span").textContent = "Sending..."
-
-        // Generate verification code (6 digits)
-        const verificationCode = Math.floor(100000 + Math.random() * 900000).toString()
-        const expiryTime = Date.now() + 15 * 60 * 1000 // 15 minutes
-
-        // Store verification code
-        chrome.storage.sync.set(
-          {
-            pg_verification_code: verificationCode,
-            pg_verification_expiry: expiryTime,
-            pg_verification_email: email,
-          },
-          () => {
-            // In a real extension, you would send an email here
-            // For this demo, we'll just show the code (in a real app, this would be sent via email)
-            resetErrorMessage.textContent = `Verification code sent to your email! (For demo: ${verificationCode})`
-            resetErrorMessage.style.color = "#10b981"
-            resetErrorMessage.classList.add("show")
-
-            // Reset button state
-            setTimeout(() => {
-              sendResetBtn.disabled = false
-              sendResetBtn.querySelector(".loading-spinner").style.display = "none"
-              sendResetBtn.querySelector("span").textContent = "Send Verification Code"
-
-              // Go to verification form
-              resetForm.style.display = "none"
-              verificationForm.style.display = "block"
-            }, 3000)
-          },
-        )
-      })
-    })
-
-    // Verify code
-    verifyCodeBtn.addEventListener("click", () => {
-      const enteredCode = verificationCodeInput.value
-
-      // Basic validation
-      if (!enteredCode || enteredCode.length !== 6) {
-        verificationErrorMessage.textContent = "Please enter a valid 6-digit verification code"
-        verificationErrorMessage.classList.add("show")
-        return
+      if (!newPass) {
+        resetError.textContent = 'Please enter new password.';
+        return;
       }
 
-      // Show loading state
-      verifyCodeBtn.disabled = true
-      verifyCodeBtn.querySelector(".loading-spinner").style.display = "inline-block"
-      verifyCodeBtn.querySelector("span").textContent = "Verifying..."
-
-      // Check verification code
-      chrome.storage.sync.get(["pg_verification_code", "pg_verification_expiry"], (result) => {
-        const storedCode = result.pg_verification_code
-        const expiryTime = result.pg_verification_expiry
-
-        setTimeout(() => {
-          // Check if code is valid and not expired
-          if (!storedCode || !expiryTime || Date.now() > expiryTime) {
-            verificationErrorMessage.textContent = "Verification code has expired. Please request a new one."
-            verificationErrorMessage.classList.add("show")
-
-            // Reset button state
-            verifyCodeBtn.disabled = false
-            verifyCodeBtn.querySelector(".loading-spinner").style.display = "none"
-            verifyCodeBtn.querySelector("span").textContent = "Verify Code"
-            return
+      if (newPass.length < 6) {
+        resetError.textContent = 'Password must be at least 6 characters.';
+        return;
           }
 
-          if (enteredCode !== storedCode) {
-            verificationErrorMessage.textContent = "Invalid verification code. Please try again."
-            verificationErrorMessage.classList.add("show")
-
-            // Reset button state
-            verifyCodeBtn.disabled = false
-            verifyCodeBtn.querySelector(".loading-spinner").style.display = "none"
-            verifyCodeBtn.querySelector("span").textContent = "Verify Code"
-            return
-          }
-
-          // Code is valid - open extension popup for password reset
-          verificationErrorMessage.textContent = "Verification successful! Opening password reset..."
-          verificationErrorMessage.style.color = "#10b981"
-          verificationErrorMessage.classList.add("show")
-
-          // Set verification status
-          chrome.storage.sync.set({ pg_verified: true }, () => {
-            // Open extension popup for password reset
+      // Save new password (hash it)
+      const newHash = sha256(newPass);
+      resetConfirmBtn.classList.add('loading');
             setTimeout(() => {
-              chrome.runtime.sendMessage({ action: "openPopup", view: "reset_password" })
-
-              // Remove the overlay
-              blurLayer.classList.add("fade-out")
+        chrome.storage.sync.set({ pg_password: newHash }, () => {
+          resetConfirmBtn.classList.remove('loading');
+          resetError.textContent = 'Password reset successfully! You can now log in.';
               setTimeout(() => {
-                blurLayer.remove()
-              }, 800)
-            }, 2000)
-          })
-        }, 1500)
-      })
-    })
+            mainModal.style.display = 'block';
+            resetModal.style.display = 'none';
+          }, 1200);
+        });
+      }, 1200);
+    });
 
-    // Helper function to validate email
-    function validateEmail(email) {
-      const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-      return re.test(email)
-    }
+    // Store original scroll position
+    let scrollPosition = 0;
+
+    // Lock scroll when blur layer is active
+    document.body.classList.add('has-blur-overlay');
+    document.documentElement.classList.add('has-blur-overlay');
+    scrollPosition = window.pageYOffset;
+    document.body.style.top = `-${scrollPosition}px`;
+    document.body.style.position = 'fixed';
+    document.body.style.width = '100%';
+
+    // Remove body class and cleanup when blur layer is removed
+    const removeBlurLayer = () => {
+      // Start fade out
+      blurDiv.classList.remove('visible');
+      
+      // Wait for the transition to complete before removing
+      blurDiv.addEventListener('transitionend', () => {
+        // Restore scroll position
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.width = '';
+        window.scrollTo(0, scrollPosition);
+        
+        document.body.classList.remove('has-blur-overlay');
+        document.documentElement.classList.remove('has-blur-overlay');
+        blurDiv.remove();
+      }, { once: true });
+    };
   })
 }
