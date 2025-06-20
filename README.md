@@ -11,12 +11,11 @@
 </p>
 
 <p align="center">
-  <a href="https://www.microsoft.com/store">
-    <img alt="Download on Microsoft Store" src="https://img.shields.io/badge/Available%20on-Microsoft%20Edge-blue?logo=microsoftedge&style=for-the-badge"/>
-  </a>
+  <img alt="Status" src="https://img.shields.io/badge/Availability-Coming%20Soon-blue?style=for-the-badge"/>
+  <img alt="Platform" src="https://img.shields.io/badge/Platform-Edge%2C%20Chrome%20(soon)-orange?style=for-the-badge"/>
   <img alt="Version" src="https://img.shields.io/badge/Version-1.0.0-blueviolet?style=for-the-badge"/>
-  <img alt="Platform" src="https://img.shields.io/badge/Platform-Edge%20Browser-green?style=for-the-badge"/>
 </p>
+
 
 ---
 
