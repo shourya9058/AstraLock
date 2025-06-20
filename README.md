@@ -1,122 +1,149 @@
-# AstraLock - Advanced Website Protection Extension
+<h1 align="center">
+  🔐 AstraLock - Advanced Website Protection Extension
+</h1>
 
-![AstraLock Logo](icon.png)
+<p align="center">
+  <img src="icon.png" alt="AstraLock Logo" width="120"/>
+</p>
 
-## Overview
+<p align="center">
+  <strong>Protect your sensitive websites with password and email authentication. Stay secure with AstraLock.</strong>
+</p>
 
-AstraLock is a powerful browser extension that adds an extra layer of security to your sensitive websites by implementing password protection and email verification. It's designed to protect your privacy when accessing important websites like WhatsApp Web, LinkedIn, and other platforms you choose to protect.
+<p align="center">
+  <a href="https://www.microsoft.com/store">
+    <img alt="Download on Microsoft Store" src="https://img.shields.io/badge/Available%20on-Microsoft%20Edge-blue?logo=microsoftedge&style=for-the-badge"/>
+  </a>
+  <img alt="Version" src="https://img.shields.io/badge/Version-1.0.0-blueviolet?style=for-the-badge"/>
+  <img alt="Platform" src="https://img.shields.io/badge/Platform-Edge%20Browser-green?style=for-the-badge"/>
+</p>
 
-## Features
+---
+
+## 📜 Overview
+
+**AstraLock** is a powerful browser extension that enhances your online privacy by adding an **intelligent password protection** layer over sensitive websites like WhatsApp Web, LinkedIn, and others of your choice. With **session-based authentication**, SPA awareness, and modern UI, it’s your digital lock for a safer browsing experience.
+
+---
+
+## 🚀 Features
 
 ### 🔒 Advanced Website Protection
-
-- Password-protected access to your chosen websites
-- Intelligent protection layer that only appears on page refresh or new tab
-- Smart SPA (Single Page Application) detection for consistent protection
-- Session-based authentication to minimize repeated password entry
+- 🔐 **Password protection** for your selected websites  
+- 🧠 **Smart detection** for SPAs (Single Page Applications)  
+- 🔁 **Session-based authentication**: Prompt only on refresh or new tab  
+- 💡 **Minimal interruption**, maximum security  
 
 ### 🛡️ Customizable Security
-
-- Add any website to your protected list
-- Default protection for WhatsApp Web
-- Easy management of protected sites through the extension popup
-- Visual confirmation for adding/removing protected sites
+- ➕ Easily **add any site** to your protected list  
+- ⚙️ Default protection for **WhatsApp Web**  
+- 🎛️ Manage your list from the **popup interface**  
+- 🟢 **Visual confirmation** on changes  
 
 ### 📧 Secure Account Management
-
-- Email verification for account setup
-- Two-factor authentication for password reset
-- Secure OTP delivery system
-- Read-only email field to prevent unauthorized changes
+- ✉️ **Email verification** for account setup  
+- 🔐 **Two-factor authentication (2FA)** for password resets  
+- 🔑 Secure **OTP-based system**  
+- 🚫 **Read-only email field** for added protection  
 
 ### 💫 Modern User Interface
+- ✨ Sleek and **minimalistic design**  
+- 🎞️ Smooth **animations and transitions**  
+- 📱 Fully **responsive layout**  
+- ✅ Clear **feedback messages**  
+- 🌫️ Gorgeous **blur effects** for protected content  
 
-- Clean and intuitive design
-- Smooth animations and transitions
-- Responsive layout
-- Clear success/error messages
-- Beautiful blur effects for protected pages
+---
 
-## Installation
+## 🛠️ Installation
 
-1. Download the extension from the Microsoft Store
-2. Click on the extension icon in your browser toolbar
-3. Follow the setup wizard to create your account:
-   - Enter your email address
-   - Set up your master password
-   - Add websites you want to protect
+1. 📥 Download the extension from the **Microsoft Edge Add-ons Store**  
+2. 🧭 Click on the **AstraLock icon** in your browser toolbar  
+3. 🧙 Follow the simple setup wizard:
+   - Enter your **email**
+   - Create your **master password**
+   - Add websites you want to **protect**
 
-## Usage
+---
 
-### Initial Setup
+## 🧩 Usage
 
-1. Click the AstraLock icon in your browser toolbar
-2. Complete the three-step setup wizard:
-   - Email verification
-   - Password creation
-   - Website protection configuration
+### ⚙️ Initial Setup
+1. Click the AstraLock icon  
+2. Complete the 3-step setup:
+   - ✅ Email verification  
+   - 🔐 Password creation  
+   - 🌐 Website protection configuration  
 
-### Adding Protected Websites
+### ➕ Adding Protected Websites
+1. Open the extension popup  
+2. Navigate to the **“Protected Sites”** tab  
+3. Enter a site URL  
+4. Hit **Add Site** ✔️
 
-1. Click the AstraLock icon
-2. Go to the "Protected Sites" tab
-3. Enter the website URL you want to protect
-4. Click "Add Site"
+### 🔓 Accessing Protected Sites
+1. Visit a protected site  
+2. Enter your **master password** when prompted  
+3. Browse freely until:
+   - 🔁 You **refresh** the page  
+   - 🆕 You open the site in a **new tab**
 
-### Accessing Protected Sites
+### 🔁 Password Reset
+1. Click **“Forgot Password”** on the lock screen  
+2. Receive a secure **OTP via email**  
+3. Enter OTP + new password  
+4. ✅ Password updated successfully
 
-1. Visit any protected website
-2. Enter your master password when prompted
-3. Once authenticated, you can browse freely until:
-   - You refresh the page
-   - You open a new tab with the protected site
+---
 
-### Password Reset
+## 🛡️ Security Features
 
-1. Click "Forgot Password" on the protection screen
-2. An OTP will be sent to your registered email
-3. Enter the OTP and your new password
-4. Submit to update your master password
+- 🔐 **SHA-256 password hashing**  
+- 🗝️ **Session-based security**  
+- 📧 **Verified email** for all sensitive actions  
+- 🧬 Secure **OTP generation**  
+- 🚫 Prevention of unauthorized **email change attempts**  
+- ♻️ **Session auto-clear** on page refresh  
 
-## Security Features
+---
 
-- SHA-256 password hashing
-- Session-based authentication
-- Email verification for sensitive operations
-- Secure OTP generation and delivery
-- Protection against unauthorized email changes
-- Automatic session clearing on page refresh
+## 📋 Technical Requirements
 
-## Technical Requirements
+- 💻 **Browser**: Microsoft Edge (latest version recommended)  
+- 🔑 **Permissions**:
+  - `storage` — to save preferences and settings  
+  - `scripting` — to inject protection UI  
+  - `activeTab` — to detect current tab for SPA handling  
+  - `tabs` — to manage navigation between protected sites  
 
-- Browser: Microsoft Edge (Latest version)
-- Permissions Required:
-  - Storage (for saving settings)
-  - Scripting (for protection layer)
-  - ActiveTab (for current tab access)
-  - Tabs (for tab management)
+---
 
-## Privacy
+## 🔐 Privacy Commitment
 
-AstraLock respects your privacy:
+We respect your privacy. AstraLock guarantees:
 
-- No data collection beyond necessary functionality
-- All sensitive data stored locally
-- Passwords are hashed before storage
-- No tracking or analytics
-- Email used only for verification purposes
+- 🚫 No data collected beyond required functionality  
+- 💾 All sensitive data is **stored locally**  
+- 🔐 Passwords are **hashed**, not stored in plain text  
+- 🕵️‍♂️ No tracking, ads, or analytics  
+- 📧 Email used **only** for verification and reset OTPs  
 
-## Support
+---
 
-For support, feature requests, or bug reports, please contact:
+## 📬 Support & Contact
 
-- Instagram: [@\_shauryasingh\_\_](https://www.instagram.com/_shauryasingh__/)
-- Mail: imparas07singh@gmail.com
+Got a suggestion or issue? Reach out:
 
-## Credits
+- 📸 **Instagram**: [@_shauryasingh__](https://www.instagram.com/_shauryasingh__/)  
+- 📧 **Email**: imparas07singh@gmail.com  
 
-Created by Shaurya Singh
+---
 
-## License
+## 🧑‍💻 Credits
 
-All rights reserved. This extension is protected by applicable copyright laws.
+Made with 💙 by **Shaurya Singh**
+
+---
+
+## 📄 License
+
