@@ -111,7 +111,7 @@ AstraLock respects your privacy:
 For support, feature requests, or bug reports, please contact:
 
 - Instagram: [@\_shauryasingh\_\_](https://www.instagram.com/_shauryasingh__/)
-- Mail: [imparas07singh@gmail.com]
+- Mail: imparas07singh@gmail.com
 
 ## Credits
 
