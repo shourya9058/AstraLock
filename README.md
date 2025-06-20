@@ -147,3 +147,10 @@ Made with 💙 by **Shaurya Singh**
 
 ## 📄 License
 
+This project is licensed under a **proprietary license**. All rights reserved © 2025 Shaurya Singh.
+
+You may not copy, modify, distribute, or use any part of this extension or its source code without explicit written permission from the author.
+
+For licensing inquiries, please contact: imparas07singh@gmail.com
+
+
